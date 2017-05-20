@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <algorithm>
 
 using namespace std;
 
@@ -40,6 +41,9 @@ void loadWordList()
 		}
 		subtitles.close();
 		cout << "<< Successfully loaded " << wordList.size() << " words from the subtitles." << endl;
+		sort(wordList.begin(), wordList.end());																			// sort words and store only unique ones.
+		wordList.erase(unique(wordList.begin(), wordList.end()), wordList.end());
+		cout << "<< Obtained a list of " << wordList.size() << " unique words." << endl;
 	}
 	else cerr << "<< Subtitles couldn't be read!" << endl;
 }

@@ -186,14 +186,15 @@ void filterWordsManually()																								//TODO: split to smaller funct
 	}
 	string whichWords;
 	cout << "\n\nWrite numbers corresponding to the words that you DO NOT know." << endl <<
-	"Write x to skip if you KNOW all 5 words." << endl <<
+	"Enter 'x' to omit if you KNOW all 5 words." << endl <<
+	"Enter 'q' to skip manual filtering." << endl <<
 	"Please don't mark proper names or non-words." << endl <<
 	"Unselected words will be added to a list of user's known words." << endl << endl <<
 	"::: 0 out of " << filteredWordList.size() << " :::" << endl;
 	vector<unsigned int> capitalizedWordsIndices, temp;                                                                 // separating capitalized words
 	vector<string> unknownWords;
 	bool isCapitalized=false, isLastWord=false;
-	unsigned int capitalizedWordIndex=0, end=0;
+	unsigned int capitalizedWordIndex=0, end=0, filtered=0;
 	for(unsigned int i=0; i<wordList.size(); i++)
 	{
 		if(wordList[i][0]<'A' || wordList[i][0]>'Z')
@@ -236,8 +237,23 @@ void filterWordsManually()																								//TODO: split to smaller funct
 		{
 			cout << endl << ">> ";
 			cin >> whichWords;
-			for(int j=0; j<=end; j++)
+			for(unsigned int j=0; j<=end; j++)
 			{
+				if(whichWords.compare("q")==0||whichWords.compare("Q")==0)
+				{
+					knownWords.close();
+					filtered=(unsigned int)unknownWords.size();
+					while(i<filteredWordList.size())
+					{
+						unknownWords.push_back(filteredWordList.at(i));
+						i++;
+					}
+					filteredWordList.swap(unknownWords);
+					cout << endl << ">> Manual filtering was skipped, obtained the final list of " << filteredWordList.size() <<
+							" words, " << filteredWordList.size()-filtered << " of which were presumed unknown." << endl << endl;
+					return;
+
+				}
 				if(whichWords.find(to_string(j+1))==string::npos)														//if user didn't mark given word as unknown.
 				{
 					knownWords << filteredWordList.at(i-end+j) << endl;

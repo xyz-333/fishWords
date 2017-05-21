@@ -5,9 +5,11 @@
 
 using namespace std;
 
-vector<string> wordList;
+vector<string> wordList, filteredWordList;
 
 void loadWordList();
+void createFilteredWordList();
+
 string lowercaseString(string *toLowercase);
 
 int main()
@@ -41,10 +43,12 @@ void loadWordList()
 			}
 		}
 		subtitles.close();
-		cout << "<< Successfully loaded " << wordList.size() << " words from the subtitles." << endl;
+		cout << "<< Successfully loaded " << wordList.size() << " words from the subtitles." << endl << endl;
+		cout << ">> Removing duplicates and sorting..." << endl;
 		sort(wordList.begin(), wordList.end());																			// sort words and store only unique ones.
 		wordList.erase(unique(wordList.begin(), wordList.end()), wordList.end());
-		cout << "<< Obtained a list of " << wordList.size() << " unique words." << endl;
+		createFilteredWordList();
+		cout << "<< Obtained a list of " << filteredWordList.size() << " unique, sorted words." << endl << endl;
 	}
 	else cerr << "<< Subtitles couldn't be read!" << endl;
 }
@@ -58,4 +62,16 @@ string lowercaseString(string *toLowercase)																				// TODO: address 
 			lowercased[j]=(char)tolower((*toLowercase)[j]);
 	}
 	return lowercased;
+}
+
+void createFilteredWordList()
+{
+	string currentWord;
+	for(auto i:wordList)
+	{
+		currentWord=lowercaseString(&i);
+		filteredWordList.push_back(currentWord);
+	}
+	sort(filteredWordList.begin(), filteredWordList.end());
+	filteredWordList.erase(unique(filteredWordList.begin(), filteredWordList.end()), filteredWordList.end());
 }

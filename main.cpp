@@ -3,6 +3,8 @@
 #include <vector>
 #include <algorithm>
 
+#define WORDS_TO_CONFIRM 9
+
 using namespace std;
 
 vector<string> wordList, filteredWordList;
@@ -13,6 +15,8 @@ void createFilteredWordList();
 void filterKnownWords();
 void loadFrequentWordList(unsigned int howFrequent, vector<string> *frequentWordList);
 void filterFrequentWords(unsigned int wordFrequency);
+//void filterProperNames();
+void filterWordsManually();
 
 string lowercaseString(string *toLowercase);
 
@@ -23,12 +27,13 @@ int main()
 	loadWordList();
 	filterKnownWords();
 	filterFrequentWords(8000);
+	filterWordsManually();
 //																														DEBUG
 //																														{
 //	vector<string> test;
 //	loadFrequentWordList(10, &test);
-//	for(auto i:filteredWordList)
-//		cout << i << endl;
+	for(auto i:filteredWordList)
+		cout << i << endl;
 //																														}
 //																														/DEBUG
 	return 0;
@@ -117,7 +122,7 @@ void filterKnownWords()
 
 void loadFrequentWordList(unsigned int howFrequent, vector<string> *frequentWordList)
 {
-	cout << ">> Loading frequent words to memory..." << endl;
+	cout << "\t>> Loading frequent words to memory..." << endl;
 	unsigned int wordsLoaded=0;
 	ifstream wordFrequencyList("frequencyList.txt");
 	if(!wordFrequencyList.good())
@@ -136,12 +141,12 @@ void loadFrequentWordList(unsigned int howFrequent, vector<string> *frequentWord
 	}
 	pos=wordFrequencyList.tellg();
 	wordFrequencyList.close();
-	cout << ">> Successfuly loaded top " << howFrequent << " most frequent words." << endl;
+	cout << "\t<< Successfuly loaded top " << howFrequent << " most frequent words." << endl;
 }
 
 void filterFrequentWords(unsigned int wordFrequency)
 {
-	cout << "<< Removing presumably known words..." << endl;
+	cout << ">> Removing presumably known words..." << endl;
 	bool isWordKnown;
 	vector<string> frequentWordList, tempWordList;
 	loadFrequentWordList(wordFrequency, &frequentWordList);
@@ -160,5 +165,149 @@ void filterFrequentWords(unsigned int wordFrequency)
 			tempWordList.push_back(i);
 	}
 	filteredWordList.swap(tempWordList);
-	cout << "Obtained a list of " << filteredWordList.size() << " rare words." << endl << endl;
+	cout << "<< Obtained a list of " << filteredWordList.size() << " rare words." << endl << endl;
 }
+
+void filterWordsManually()																								//TODO: split to smaller functions
+{
+	char proceed;
+	cout << ">> Proceeding to manual filtering.\n\t>> Enter \'y\' if you wish to continue or \'n\' to skip... \n\t<< ";
+	cin >> proceed;
+	if(proceed=='n'||proceed=='N')
+	{
+		cout << endl << ">> Manual filtering was canceled, all words are presumed unknown." << endl << endl;
+		return;
+	}
+	ofstream knownWords("knownWords.txt", std::ios::app);
+	if(!knownWords.good())
+	{
+		cerr << "knownWords.txt couldn't be written!" << endl;
+		return;
+	}
+	string whichWords;
+	cout << "\n\nWrite numbers corresponding to the words that you DO NOT know." << endl <<
+	"Write x to skip if you KNOW all 5 words." << endl <<
+	"Please don't mark proper names or non-words." << endl <<
+	"Unselected words will be added to a list of user's known words." << endl << endl <<
+	"::: 0 out of " << filteredWordList.size() << " :::" << endl;
+	vector<unsigned int> capitalizedWordsIndices, temp;                                                                 // separating capitalized words
+	vector<string> unknownWords;
+	bool isCapitalized=false, isLastWord=false;
+	unsigned int capitalizedWordIndex=0, end=0;
+	for(unsigned int i=0; i<wordList.size(); i++)
+	{
+		if(wordList[i][0]<'A' || wordList[i][0]>'Z')
+			break;
+		for(unsigned int j=0; j<filteredWordList.size(); j++)
+		{
+			if(lowercaseString(&wordList[i]).compare(filteredWordList.at(j)) == 0)
+			{
+				capitalizedWordsIndices.push_back(i);
+				temp.push_back(j);
+			}
+		}
+	}
+	for(unsigned int i=0; i<filteredWordList.size(); i++)
+	{
+		cout << (i%WORDS_TO_CONFIRM)+1 << ". ";
+		for(unsigned int k=0; k<temp.size(); k++)
+		{
+			isCapitalized=false;
+			if(i == temp[k])
+			{
+				isCapitalized=true;
+				capitalizedWordIndex=capitalizedWordsIndices[k];
+				break;
+			}
+		}
+		if(isCapitalized)
+			cout << wordList.at(capitalizedWordIndex);
+		else
+			cout << filteredWordList.at(i);
+		cout << endl;
+		end=WORDS_TO_CONFIRM-1;
+		if(i==filteredWordList.size()-1)
+		{
+			cout << i << endl;
+			isLastWord=true;
+			end=i%WORDS_TO_CONFIRM;
+		}
+		if((i%WORDS_TO_CONFIRM)+1==WORDS_TO_CONFIRM||isLastWord)
+		{
+			cout << endl << ">> ";
+			cin >> whichWords;
+			for(int j=0; j<=end; j++)
+			{
+				if(whichWords.find(to_string(j+1))==string::npos)														//if user didn't mark given word as unknown.
+				{
+					knownWords << filteredWordList.at(i-end+j) << endl;
+				}
+				else
+				{
+					unknownWords.push_back(filteredWordList.at(i-end+j));
+				}
+			}
+			cout << endl << "::: " << i+1 << " out of " << filteredWordList.size() << " :::" << endl << endl;
+		}
+	}
+	filteredWordList.swap(unknownWords);
+	knownWords.close();
+	cout << endl << ">> Manual filtering is finished, obtained the final list of " << filteredWordList.size() << " unknown words." << endl << endl;
+}
+
+//	ofstream chosenWords("chosenWordList.txt");
+//	ofstream userUnknownWords;
+//	userUnknownWords.open("userUnknownWords.txt", ios_base::app);
+//	for(auto i:wordList)
+//	{
+//		if(!(i.empty()))
+//		{
+//			chosenWords << i << endl;
+//			userUnknownWords << i << endl;
+//		}
+//	}
+//	cout << "Successfully obtained a list of " << loadedWordsCount-knownWordsCount << " words by manually removing " <<
+//	knownWordsCount << " known words..." << endl << endl;
+//	filteredWords.close();
+//	chosenWords.close();
+//	userUnknownWords.close();
+//	knownWordsList.close();
+//}
+
+//void filterProperNames()
+//{
+//	ifstream wordFrequencyList("frequencyList.txt");
+//	if(!wordFrequencyList.good())
+//	{
+//		cerr << "filteredWordList or wordFrequencyList couldn't be read!" << endl;
+//		return;
+//	}
+//	vector<string> presumedProperNames, properNames;
+//	string currentWord, presumedProperName;
+//	bool isProperName;
+//	for(auto i:wordList)
+//	{
+//		if(i[0]<'A'||i[0]>'Z')
+//			break;
+//		presumedProperNames.push_back(lowercaseString(&i));
+//	}
+//	wordFrequencyList.seekg(pos, wordFrequencyList.beg);
+//	while(getline(wordFrequencyList, currentWord))
+//	{
+//		for(auto i:presumedProperNames)
+//		{
+//			isProperName=true;
+//			if(i.compare(currentWord)==0)
+//			{
+//				isProperName=false;
+//				break;
+//			}
+//			if(isProperName)
+//
+//
+////			if(isProperName)																							// DEBUG: display presumed proper names.
+////				cout << *i << endl;
+//		}
+//
+//		currentWord.clear();
+//	}

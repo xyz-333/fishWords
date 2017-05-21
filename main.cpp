@@ -6,6 +6,7 @@
 using namespace std;
 
 vector<string> wordList, filteredWordList;
+long int pos;
 
 void loadWordList();
 void createFilteredWordList();
@@ -133,6 +134,7 @@ void loadFrequentWordList(unsigned int howFrequent, vector<string> *frequentWord
 		if(wordsLoaded==howFrequent)
 			break;
 	}
+	pos=wordFrequencyList.tellg();
 	wordFrequencyList.close();
 	cout << ">> Successfuly loaded top " << howFrequent << " most frequent words." << endl;
 }

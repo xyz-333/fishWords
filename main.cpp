@@ -10,6 +10,7 @@ vector<string> wordList, filteredWordList;
 void loadWordList();
 void createFilteredWordList();
 void filterKnownWords();
+void loadFrequentWordList(unsigned int howFrequent, vector<string> *frequentWordList);
 
 string lowercaseString(string *toLowercase);
 
@@ -19,6 +20,14 @@ int main()
 	cout << ">> Loading list of words to memory..." << endl;
 	loadWordList();
 	filterKnownWords();
+//																														DEBUG
+//																														{
+//	vector<string> test;
+//	loadFrequentWordList(10, &test);
+//	for(auto i:test)
+//		cout << i << endl;
+//																														}
+//																														/DEBUG
 	return 0;
 }
 
@@ -101,4 +110,25 @@ void filterKnownWords()
 //	for (it=filteredWordList.begin(); it!=filteredWordList.end(); ++it)													//DEBUG
 //		std::cout << endl << *it;
 //	std::cout << '\n';
+}
+
+void loadFrequentWordList(unsigned int howFrequent, vector<string> *frequentWordList)
+{
+	unsigned int wordsLoaded=0;
+	ifstream wordFrequencyList("frequencyList.txt");
+	if(!wordFrequencyList.good())
+	{
+		cerr << "frequencyList.txt couldn't be read!" << endl;
+		return;
+	}
+	string currentWord;
+	while(getline(wordFrequencyList, currentWord))																		//load wordListUniqueSorted to a vector
+	{
+		wordsLoaded++;
+		frequentWordList->push_back(currentWord);
+		currentWord.clear();
+		if(wordsLoaded==howFrequent)
+			break;
+	}
+	wordFrequencyList.close();
 }

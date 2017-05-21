@@ -11,6 +11,7 @@ void loadWordList();
 void createFilteredWordList();
 void filterKnownWords();
 void loadFrequentWordList(unsigned int howFrequent, vector<string> *frequentWordList);
+void filterFrequentWords(unsigned int wordFrequency);
 
 string lowercaseString(string *toLowercase);
 
@@ -20,11 +21,12 @@ int main()
 	cout << ">> Loading list of words to memory..." << endl;
 	loadWordList();
 	filterKnownWords();
+	filterFrequentWords(8000);
 //																														DEBUG
 //																														{
 //	vector<string> test;
 //	loadFrequentWordList(10, &test);
-//	for(auto i:test)
+//	for(auto i:filteredWordList)
 //		cout << i << endl;
 //																														}
 //																														/DEBUG
@@ -114,6 +116,7 @@ void filterKnownWords()
 
 void loadFrequentWordList(unsigned int howFrequent, vector<string> *frequentWordList)
 {
+	cout << ">> Loading frequent words to memory..." << endl;
 	unsigned int wordsLoaded=0;
 	ifstream wordFrequencyList("frequencyList.txt");
 	if(!wordFrequencyList.good())
@@ -131,4 +134,29 @@ void loadFrequentWordList(unsigned int howFrequent, vector<string> *frequentWord
 			break;
 	}
 	wordFrequencyList.close();
+	cout << ">> Successfuly loaded top " << howFrequent << " most frequent words." << endl;
+}
+
+void filterFrequentWords(unsigned int wordFrequency)
+{
+	cout << "<< Removing presumably known words..." << endl;
+	bool isWordKnown;
+	vector<string> frequentWordList, tempWordList;
+	loadFrequentWordList(wordFrequency, &frequentWordList);
+	for(auto i:filteredWordList)
+	{
+		isWordKnown=false;
+		for(auto j:frequentWordList)
+		{
+			if(i.compare(j)==0)
+			{
+				isWordKnown=true;
+				break;
+			}
+		}
+		if(!isWordKnown)
+			tempWordList.push_back(i);
+	}
+	filteredWordList.swap(tempWordList);
+	cout << "Obtained a list of " << filteredWordList.size() << " rare words." << endl << endl;
 }

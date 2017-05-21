@@ -8,6 +8,7 @@ using namespace std;
 vector<string> wordList;
 
 void loadWordList();
+string lowercaseString(string *toLowercase);
 
 int main()
 {
@@ -27,7 +28,7 @@ void loadWordList()
 	{
 		while(subtitles.get(currentChar))
 		{
-			if(isalpha(currentChar)) 																					// TODO: make it work for words with diacritics.
+			if(isalpha(currentChar)) 																					// TODO: address the issue of locale or character encoding
 				currentWord+=currentChar;
 			else
 			{
@@ -46,4 +47,15 @@ void loadWordList()
 		cout << "<< Obtained a list of " << wordList.size() << " unique words." << endl;
 	}
 	else cerr << "<< Subtitles couldn't be read!" << endl;
+}
+
+string lowercaseString(string *toLowercase)																				// TODO: address the issue of locale or character encoding
+{
+	string lowercased=*toLowercase;
+	for(unsigned int j=0; j<(*toLowercase).size(); j++)
+	{
+		if((*toLowercase)[j]>='A'&&((*toLowercase)[j]<='Z'))
+			lowercased[j]=(char)tolower((*toLowercase)[j]);
+	}
+	return lowercased;
 }

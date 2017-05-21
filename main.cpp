@@ -9,6 +9,7 @@ vector<string> wordList, filteredWordList;
 
 void loadWordList();
 void createFilteredWordList();
+void filterKnownWords();
 
 string lowercaseString(string *toLowercase);
 
@@ -17,7 +18,19 @@ int main()
 	cout << ">> Starting project fishWords\n\n\n";
 	cout << ">> Loading list of words to memory..." << endl;
 	loadWordList();
+	filterKnownWords();
 	return 0;
+}
+
+string lowercaseString(string *toLowercase)																				// TODO: address the issue of locale or character encoding
+{
+	string lowercased=*toLowercase;
+	for(unsigned int j=0; j<(*toLowercase).size(); j++)
+	{
+		if((*toLowercase)[j]>='A'&&((*toLowercase)[j]<='Z'))
+			lowercased[j]=(char)tolower((*toLowercase)[j]);
+	}
+	return lowercased;
 }
 
 void loadWordList()
@@ -50,18 +63,7 @@ void loadWordList()
 		createFilteredWordList();
 		cout << "<< Obtained a list of " << filteredWordList.size() << " unique, sorted words." << endl << endl;
 	}
-	else cerr << "<< Subtitles couldn't be read!" << endl;
-}
-
-string lowercaseString(string *toLowercase)																				// TODO: address the issue of locale or character encoding
-{
-	string lowercased=*toLowercase;
-	for(unsigned int j=0; j<(*toLowercase).size(); j++)
-	{
-		if((*toLowercase)[j]>='A'&&((*toLowercase)[j]<='Z'))
-			lowercased[j]=(char)tolower((*toLowercase)[j]);
-	}
-	return lowercased;
+	else cerr << "<< subtitle.srt couldn't be read!" << endl;
 }
 
 void createFilteredWordList()
@@ -74,4 +76,29 @@ void createFilteredWordList()
 	}
 	sort(filteredWordList.begin(), filteredWordList.end());
 	filteredWordList.erase(unique(filteredWordList.begin(), filteredWordList.end()), filteredWordList.end());
+}
+
+void filterKnownWords()
+{
+	cout << ">> Removing already known words..." << endl;
+	string knownWord;
+	vector<string> knownWordList;
+	vector<string>::iterator it;
+	ifstream knownWords("knownWords.txt");
+	if(!knownWords.good())
+	{
+		cerr << "knownWords.txt couldn't be read!" << endl;
+		return;
+	}
+	while(getline(knownWords, knownWord))
+		knownWordList.push_back(knownWord);
+	sort(knownWordList.begin(), knownWordList.end());
+	vector<string> unknownWordList(knownWordList.size()+filteredWordList.size());
+	it=set_difference(filteredWordList.begin(), filteredWordList.end(), knownWordList.begin(), knownWordList.end(), unknownWordList.begin());
+	unknownWordList.resize(it-unknownWordList.begin());
+	filteredWordList.swap(unknownWordList);
+	cout << "<< Obtained a list of " << (filteredWordList.size()) << " unknown words." << endl << endl;
+//	for (it=filteredWordList.begin(); it!=filteredWordList.end(); ++it)													//DEBUG
+//		std::cout << endl << *it;
+//	std::cout << '\n';
 }

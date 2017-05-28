@@ -38,7 +38,7 @@ int main()
 	findDefinitions();
 //																														DEBUG
 //																														{
-	test();
+//	test();
 //																														}
 //																														/DEBUG
 	return 0;
@@ -290,7 +290,7 @@ void findDefinitions()
 {
 	cout << ">> Finding definitions for unknown words in dictionary..." << endl;
 	ifstream dictionary("dictionary.txt");
-	ofstream debug("debug.txt");
+//	ofstream debug("debug.txt");
 	if(!dictionary.good())
 	{
 		cerr << "Couldn't read dictionary.txt!" << endl;
@@ -318,7 +318,7 @@ void findDefinitions()
 					continue;
 				currentWord.pop_back();																						//delete end of line character
 				currentWord=lowercaseString(currentWord);
-				debug << "soughtWord:" << soughtWord << ", currentWord: " << currentWord << endl;						//DEBUG
+//				debug << "soughtWord:" << soughtWord << ", currentWord: " << currentWord << endl;						//DEBUG
 				if(currentWord.compare(soughtWord)==0)																		//if it is the sought word
 				{
 					foundDefinitions++;
@@ -350,7 +350,7 @@ void findDefinitions()
 		}
 	}
 	dictionary.close();
-	debug.close();
+//	debug.close();
 	cout << "<< Obtained definitions for " << foundDefinitions << " out of " << filteredWordList.size() << " words..." << endl;
 }
 
@@ -421,9 +421,8 @@ string lemmaOf(string toLemma, unsigned* wasLemmatized)
 	if((lemma.back()=='s'||lemma.back()=='r'||lemma.back()=='d')&&														// if word ends with "IES" or "IER" or "IED".
 	   lemma[lemma.size()-2]=='e'&&lemma[lemma.size()-3]=='i')
 	{
-		lemma.pop_back();
-		lemma.pop_back();
-		lemma.back()='y';
+		lemma.resize(lemma.size()-3);
+		lemma+='y';
 		*wasLemmatized=1;
 		return lemma;
 	}
@@ -435,24 +434,19 @@ string lemmaOf(string toLemma, unsigned* wasLemmatized)
 	}
 	if(lemma.back()=='g'&&lemma[lemma.size()-2]=='n'&&(lemma)[lemma.size()-3]=='i')										// if word ends with "ING".
 	{
-		lemma.pop_back();
-		lemma.pop_back();
-		lemma.pop_back();
+		lemma.resize(lemma.size()-3);
 		*wasLemmatized=2;
 		return lemma;
 	}
 	if(lemma.back()=='t'&&lemma[lemma.size()-2]=='s'&&lemma[lemma.size()-3]=='e')										// if word ends with "EST".
 	{
-		lemma.pop_back();
-		lemma.pop_back();
-		lemma.pop_back();
+		lemma.resize(lemma.size()-3);
 		*wasLemmatized=1;
 		return lemma;
 	}
 	if(lemma.back()=='d'&&lemma[lemma.size()-2]=='e')																	// if word ends with "ED".
 	{
-		lemma.pop_back();
-		lemma.pop_back();
+		lemma.resize(lemma.size()-2);
 		*wasLemmatized=2;
 		return lemma;
 	}
@@ -466,4 +460,7 @@ void test()
 	{
 		cout << filteredWordList[i] << ":\n" << definitionList[i] << endl << endl;
 	}
+
+//	unsigned wasLemmatized=0;
+//	cout << lemmaOf(" sharpest", &wasLemmatized) << endl;
 }

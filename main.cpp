@@ -2,13 +2,14 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
+#include <limits>
 
 #define WORDS_TO_CONFIRM 9
+#define WORDS_KNOWN 8000
 
 using namespace std;
 
-vector<string> wordList, filteredWordList;
-long int pos;
+vector<string> wordList, filteredWordList, definitionList;
 
 void loadWordList();
 void createFilteredWordList();
@@ -17,37 +18,50 @@ void loadFrequentWordList(unsigned int howFrequent, vector<string> *frequentWord
 void filterFrequentWords(unsigned int wordFrequency);
 //void filterProperNames();
 void filterWordsManually();
+void findDefinitions();
+void loadDefinition(ifstream& dictionary);
+void test();
 
-string lowercaseString(string *toLowercase);
+string lowercaseString(string toLowercase);
+string lemmaOf(string toLemma, unsigned* wasLemmatized);
+fstream& goToLine(fstream& file, unsigned int num);
 
 int main()
 {
+
 	cout << ">> Starting project fishWords\n\n\n";
 	cout << ">> Loading list of words to memory..." << endl;
 	loadWordList();
 	filterKnownWords();
-	filterFrequentWords(8000);
+	filterFrequentWords(WORDS_KNOWN);
 	filterWordsManually();
+	findDefinitions();
 //																														DEBUG
 //																														{
-//	vector<string> test;
-//	loadFrequentWordList(10, &test);
-	for(auto i:filteredWordList)
-		cout << i << endl;
+	test();
 //																														}
 //																														/DEBUG
 	return 0;
 }
 
-string lowercaseString(string *toLowercase)																				// TODO: address the issue of locale or character encoding
+string lowercaseString(string toLowercase)																				// TODO: address the issue of locale or character encoding
 {
-	string lowercased=*toLowercase;
-	for(unsigned int j=0; j<(*toLowercase).size(); j++)
+	string lowercased=toLowercase;
+	for(unsigned int j=0; j<toLowercase.size(); j++)
 	{
-		if((*toLowercase)[j]>='A'&&((*toLowercase)[j]<='Z'))
-			lowercased[j]=(char)tolower((*toLowercase)[j]);
+		if(toLowercase[j]>='A'&&toLowercase[j]<='Z')
+			lowercased[j]=(char)tolower(toLowercase[j]);
 	}
 	return lowercased;
+}
+
+fstream& goToLine(fstream& file, unsigned int num)
+{
+	file.seekg(std::ios::beg);
+	for(int i=0; i<num-1; ++i){
+		file.ignore(numeric_limits<streamsize>::max(),'\n');
+	}
+	return file;
 }
 
 void loadWordList()
@@ -88,7 +102,7 @@ void createFilteredWordList()
 	string currentWord;
 	for(auto i:wordList)
 	{
-		currentWord=lowercaseString(&i);
+		currentWord=lowercaseString(i);
 		filteredWordList.push_back(currentWord);
 	}
 	sort(filteredWordList.begin(), filteredWordList.end());
@@ -139,7 +153,6 @@ void loadFrequentWordList(unsigned int howFrequent, vector<string> *frequentWord
 		if(wordsLoaded==howFrequent)
 			break;
 	}
-	pos=wordFrequencyList.tellg();
 	wordFrequencyList.close();
 	cout << "\t<< Successfuly loaded top " << howFrequent << " most frequent words." << endl;
 }
@@ -184,7 +197,6 @@ void filterWordsManually()																								//TODO: split to smaller funct
 		cerr << "knownWords.txt couldn't be written!" << endl;
 		return;
 	}
-	string whichWords;
 	cout << "\n\nWrite numbers corresponding to the words that you DO NOT know." << endl <<
 	"Enter 'x' to omit if you KNOW all 5 words." << endl <<
 	"Enter 'q' to skip manual filtering." << endl <<
@@ -193,6 +205,7 @@ void filterWordsManually()																								//TODO: split to smaller funct
 	"::: 0 out of " << filteredWordList.size() << " :::" << endl;
 	vector<unsigned int> capitalizedWordsIndices, temp;                                                                 // separating capitalized words
 	vector<string> unknownWords;
+	string whichWords;
 	bool isCapitalized=false, isLastWord=false;
 	unsigned int capitalizedWordIndex=0, end=0, filtered=0;
 	for(unsigned int i=0; i<wordList.size(); i++)
@@ -201,7 +214,7 @@ void filterWordsManually()																								//TODO: split to smaller funct
 			break;
 		for(unsigned int j=0; j<filteredWordList.size(); j++)
 		{
-			if(lowercaseString(&wordList[i]).compare(filteredWordList.at(j)) == 0)
+			if(lowercaseString(wordList[i]).compare(filteredWordList.at(j)) == 0)
 			{
 				capitalizedWordsIndices.push_back(i);
 				temp.push_back(j);
@@ -249,8 +262,9 @@ void filterWordsManually()																								//TODO: split to smaller funct
 						i++;
 					}
 					filteredWordList.swap(unknownWords);
-					cout << endl << ">> Manual filtering was skipped, obtained the final list of " << filteredWordList.size() <<
-							" words, " << filteredWordList.size()-filtered << " of which were presumed unknown." << endl << endl;
+					cout << endl << ">> Manual filtering was skipped." << endl;
+					cout << "<< Obtained the final list of " << filteredWordList.size() << " words, " <<
+							filteredWordList.size()-filtered << " of which were presumed unknown." << endl << endl;
 					return;
 
 				}
@@ -268,62 +282,188 @@ void filterWordsManually()																								//TODO: split to smaller funct
 	}
 	filteredWordList.swap(unknownWords);
 	knownWords.close();
-	cout << endl << ">> Manual filtering is finished, obtained the final list of " << filteredWordList.size() << " unknown words." << endl << endl;
+	cout << endl << ">> Manual filtering is finished, obtained the final list of " <<
+			filteredWordList.size() << " unknown words." << endl << endl;
 }
 
-//	ofstream chosenWords("chosenWordList.txt");
-//	ofstream userUnknownWords;
-//	userUnknownWords.open("userUnknownWords.txt", ios_base::app);
-//	for(auto i:wordList)
-//	{
-//		if(!(i.empty()))
-//		{
-//			chosenWords << i << endl;
-//			userUnknownWords << i << endl;
-//		}
-//	}
-//	cout << "Successfully obtained a list of " << loadedWordsCount-knownWordsCount << " words by manually removing " <<
-//	knownWordsCount << " known words..." << endl << endl;
-//	filteredWords.close();
-//	chosenWords.close();
-//	userUnknownWords.close();
-//	knownWordsList.close();
-//}
+void findDefinitions()
+{
+	cout << ">> Finding definitions for unknown words in dictionary..." << endl;
+	ifstream dictionary("dictionary.txt");
+	ofstream debug("debug.txt");
+	if(!dictionary.good())
+	{
+		cerr << "Couldn't read dictionary.txt!" << endl;
+		return;
+	}
+	unsigned int foundDefinitions=0, wasLemmatized;
+	string currentWord, soughtWord;
+	streampos initialPos=0;
+	bool canDefinitionBeFound, searchedForLemma;
+	for(unsigned int i=0; i<filteredWordList.size(); i++)
+	{
+		wasLemmatized=0;
+		canDefinitionBeFound=true;
+		searchedForLemma=false;
+		soughtWord=filteredWordList[i];
+		initialPos=dictionary.tellg();
+		while(canDefinitionBeFound)
+		{
+			getline(dictionary, currentWord);
+			if(currentWord.size()<=3)
+				getline(dictionary, currentWord);
+			if(isupper(currentWord[0])&&isupper(currentWord[1])&&isupper(currentWord[2])) 								//if current line is a word
+			{
+				if(isupper(currentWord[currentWord.size()-2])==0)
+					continue;
+				currentWord.pop_back();																						//delete end of line character
+				currentWord=lowercaseString(currentWord);
+				debug << "soughtWord:" << soughtWord << ", currentWord: " << currentWord << endl;						//DEBUG
+				if(currentWord.compare(soughtWord)==0)																		//if it is the sought word
+				{
+					foundDefinitions++;
+					loadDefinition(dictionary);
+					break;
+				}
+				if(currentWord.compare(soughtWord)>0)																		//if it is past sought word
+				{
+					if(!searchedForLemma)																						//if haven't looked for lemma yet
+					{
+						dictionary.seekg(initialPos, dictionary.beg);
+						soughtWord=lemmaOf(soughtWord, &wasLemmatized);
+						if(wasLemmatized==1)																						//if lemmatizing was anything but removing -ING or removing -ED
+							searchedForLemma=true;
+						if(!wasLemmatized)																							//if can't transform to lemma
+						{
+							canDefinitionBeFound=false;
+							definitionList.push_back("X");
+						}
+						continue;
+					}
+					else																										//if haven't found lemma either
+					{
+						definitionList.push_back("X");
+						break;
+					}
+				}
+			}
+		}
+	}
+	dictionary.close();
+	debug.close();
+	cout << "<< Obtained definitions for " << foundDefinitions << " out of " << filteredWordList.size() << " words..." << endl;
+}
 
-//void filterProperNames()
-//{
-//	ifstream wordFrequencyList("frequencyList.txt");
-//	if(!wordFrequencyList.good())
-//	{
-//		cerr << "filteredWordList or wordFrequencyList couldn't be read!" << endl;
-//		return;
-//	}
-//	vector<string> presumedProperNames, properNames;
-//	string currentWord, presumedProperName;
-//	bool isProperName;
-//	for(auto i:wordList)
-//	{
-//		if(i[0]<'A'||i[0]>'Z')
-//			break;
-//		presumedProperNames.push_back(lowercaseString(&i));
-//	}
-//	wordFrequencyList.seekg(pos, wordFrequencyList.beg);
-//	while(getline(wordFrequencyList, currentWord))
-//	{
-//		for(auto i:presumedProperNames)
-//		{
-//			isProperName=true;
-//			if(i.compare(currentWord)==0)
-//			{
-//				isProperName=false;
-//				break;
-//			}
-//			if(isProperName)
-//
-//
-////			if(isProperName)																							// DEBUG: display presumed proper names.
-////				cout << *i << endl;
-//		}
-//
-//		currentWord.clear();
-//	}
+void loadDefinition(ifstream& dictionary)
+{
+	string currentLine, currentDefinition="";
+	bool isFirstLine=true, doSkip=false;
+	while(getline(dictionary, currentLine))																				//--> skip to definition
+	{
+		if(currentLine.length()<=1)
+			break;
+		currentLine.clear();
+	}																													//<--
+	while(getline(dictionary, currentLine))
+	{
+		if(isFirstLine)
+		{
+			isFirstLine=false;
+			if(currentLine[4]==':')
+				doSkip=true;
+			else if(currentLine[0]=='1')
+			{
+				if(currentLine[3]=='(')
+				{
+					getline(dictionary, currentLine);
+					getline(dictionary, currentLine);
+				}
+				doSkip=true;
+			}
+			else
+				break;
+		}
+		if(currentLine.length()<=1)                                                                               		//if definition has ended
+		{
+			if(doSkip)
+				break;
+			else
+				isFirstLine=true;
+		}
+		currentLine.pop_back();																							//delete end of line character
+		currentDefinition.append(" ");
+		currentDefinition.append(currentLine);
+	}
+	if(currentDefinition[1]=='1')																						//if definition starts with "1. "
+		currentDefinition=(currentDefinition.substr(4, currentDefinition.size()-4));
+	else if(currentDefinition[5]==':')																					//if definition starts with 'Defn: "
+		currentDefinition=(currentDefinition.substr(7, currentDefinition.size()-7));
+	for(unsigned i=0; i<currentDefinition.size(); i++)
+	{
+		if(currentDefinition[i]=='.')
+		{
+			if(currentDefinition[i-1]!='p'&&currentDefinition[i-2]!='s')												//delete part of the definition after first dot, but not when there's 'sp' before it, like in "esp. [...]"
+			currentDefinition=currentDefinition.substr(0, i);
+		}
+	}
+	definitionList.push_back(currentDefinition);
+}
+
+string lemmaOf(string toLemma, unsigned* wasLemmatized)
+{
+	string lemma=toLemma;
+	if(*wasLemmatized==2)																								// if word was already lemmatized by removing "ING" or "ED"
+	{
+		lemma.push_back('e');
+		*wasLemmatized=1;
+		return lemma;
+	}
+	if((lemma.back()=='s'||lemma.back()=='r'||lemma.back()=='d')&&														// if word ends with "IES" or "IER" or "IED".
+	   lemma[lemma.size()-2]=='e'&&lemma[lemma.size()-3]=='i')
+	{
+		lemma.pop_back();
+		lemma.pop_back();
+		lemma.back()='y';
+		*wasLemmatized=1;
+		return lemma;
+	}
+	if(lemma.back()=='s')																								// if word ends with "S".
+	{
+		lemma.pop_back();
+		*wasLemmatized=1;
+		return lemma;
+	}
+	if(lemma.back()=='g'&&lemma[lemma.size()-2]=='n'&&(lemma)[lemma.size()-3]=='i')										// if word ends with "ING".
+	{
+		lemma.pop_back();
+		lemma.pop_back();
+		lemma.pop_back();
+		*wasLemmatized=2;
+		return lemma;
+	}
+	if(lemma.back()=='t'&&lemma[lemma.size()-2]=='s'&&lemma[lemma.size()-3]=='e')										// if word ends with "EST".
+	{
+		lemma.pop_back();
+		lemma.pop_back();
+		lemma.pop_back();
+		*wasLemmatized=1;
+		return lemma;
+	}
+	if(lemma.back()=='d'&&lemma[lemma.size()-2]=='e')																	// if word ends with "ED".
+	{
+		lemma.pop_back();
+		lemma.pop_back();
+		*wasLemmatized=2;
+		return lemma;
+	}
+	*wasLemmatized=0;
+	return lemma;
+}
+
+void test()
+{
+	for(int i=0; i<filteredWordList.size(); i++)
+	{
+		cout << filteredWordList[i] << ":\n" << definitionList[i] << endl << endl;
+	}
+}
